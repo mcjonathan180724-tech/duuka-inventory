@@ -1,0 +1,39 @@
+{% extends 'admin/base_site.html' %}
+{% block content %}
+{% load humanize %}
+
+<h1>SALES DETAILS</h1>
+
+<hr>
+
+<p><h2 style="border:2px solid forestgreen">{{ sale.product }}</h2></p>
+
+<p>
+    <strong>Description:</strong>
+    {{ sale.product.type }}
+</p>
+
+<p>
+    <strong>CATEGORY:</strong>
+    {{ sale.product.category|default:"Uncategorized" }}
+</p>
+
+<p>
+    <strong>Buying Price:</strong>
+    {{ sale.price|intcomma }}
+</p>
+
+<p>
+    <strong>Quantity:</strong>
+    {{ sale.quantity }}
+</p>
+
+<p>
+    <strong>Sold On:</strong>
+    {{ sale.created }}
+</p>
+
+<br>
+
+
+{% endblock%}

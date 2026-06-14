@@ -1,0 +1,223 @@
+from os import name
+
+from django.core.exceptions import ValidationError
+from django.db import models
+from django.core.validators import MinValueValidator
+
+# Create your models here.
+
+class Category(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+    created = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return self.name
+
+class Supplier(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    phone = models.CharField(max_length=20, blank=True)
+    email = models.EmailField(blank=True)
+    location = models.CharField(max_length=200, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return self.name
+
+
+class Product(models.Model):
+    # these productstate en products type are part of Products, function called in there
+    class ProductState(models.TextChoices):
+        AVAILABLE = 'AVAILABLE', 'Available'
+        COMING = 'COMING', 'Coming'
+        TAKEN = 'TAKEN', 'Taken'
+
+    class ProductType(models.TextChoices):
+        AMOLED = 'AMOLED', 'AMOLED'
+        OLED = 'OLED', 'OLED'
+        COPY = 'COPY', 'COPY'
+
+#adding category for each product
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True,blank=True)
+#we set on_delete to set null, being true, meaning if a category is deleted it doesnot delete whatever belongs to it
+    title = models.CharField(max_length=200)
+    supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True)
+    description = models.TextField()
+    buying_price = models.IntegerField(validators=[MinValueValidator(1)])
+    selling_price = models.IntegerField(validators=[MinValueValidator(1)])
+    quantity = models.IntegerField(validators=[MinValueValidator(1)])
+    
+    image = models.ImageField(
+        upload_to='products/',
+        default='products/screenimage1.png',
+        blank=True,
+        null=True
+    )
+
+    type = models.CharField(
+        max_length=20,
+        choices=ProductType,
+        default=ProductType.AMOLED
+    )    #state = models.TextChoices('AVAILABLE', 'COMING', 'TAKEN')
+    available = models.BooleanField(default=True)
+
+    created = models.DateTimeField(auto_now_add=True)
+    state = models.CharField(
+        max_length=20,
+        choices=ProductState,
+        default=ProductState.AVAILABLE
+    )
+    is_deleted = models.BooleanField(default=False)
+    def clean(self):
+            if self.quantity <= 0:
+                raise ValidationError("Product quantity must be greater than 0")
+            if self.buying_price <= 0:
+                raise ValidationError("Product buying price must be greater than 0")
+            if self.selling_price <= 0:
+                raise ValidationError("Product selling price must be greater than 0")
+
+
+    def save(self, *args, **kwargs):
+        if self.quantity <= 0:
+            self.available = False
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.title
+
+    # low stock alert function
+
+    @property
+    def low_stock(self):
+        return self.quantity > 0 and self.quantity < 3
+
+    @property
+    def out_of_stock(self):
+
+        return self.quantity == 0
+
+class Sale(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.IntegerField()
+    price = models.IntegerField(editable=False)
+    type = models.TextChoices('AMOLED', 'OLED', 'COPY')
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return (
+            f"{self.product.title}"
+            f"{self.quantity}"
+        )
+
+    # calculating total sales
+    @property
+    def total_cost(self):
+        return self.price * self.quantity
+
+    # calculating total profits on each sale
+    @property
+    def profit(self):
+        return (self.product.selling_price - self.product.buying_price) * self.quantity
+
+    # validating sales before saving, to avoid bags
+    def clean(self):
+        if self.quantity <= 0:
+            raise ValidationError("You can't sell less than zero")
+        elif self.quantity > self.product.quantity:
+            raise ValidationError("You can't sell more than what you have")
+
+
+
+
+    # now after validation you can save without bags
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+
+        if is_new:
+            self.full_clean()
+
+            # save current products price
+            self.price = self.product.selling_price
+
+            # reduce stock
+            self.product.quantity -= self.quantity
+            self.product.save()
+            # low stock notification
+            if self.product.quantity <= 3:
+                Notification.objects.create(
+                    product=self.product,
+                    type='LOW_STOCK',
+                    message=(f"{self.product.title} "
+                             f"is low in stock "
+                             f"({self.product.quantity} left). "
+                             f"Supplier: "
+                             f"{self.product.supplier}")
+                )
+            if self.product.quantity == 0:
+                Notification.objects.create(
+                    product=self.product,
+                    type='OUT_OF_STOCK',
+                    message=(
+                        f"{self.product.title} "
+                        f"is out of stock. "
+                        f"Contact "
+                        f"{self.product.supplier}"
+                    )
+                )
+        super().save(*args, **kwargs)
+
+
+class Restock(models.Model):
+    product = models.ForeignKey( Product, on_delete=models.CASCADE )
+
+    quantity = models.IntegerField()
+
+    created = models.DateTimeField( auto_now_add=True )
+
+    def __str__(self):
+        return (
+            f"{self.product.title} "
+            f"+{self.quantity}"
+        )
+
+    def clean(self):
+        if self.quantity <= 0:
+            raise ValidationError(
+                "Restock quantity must be greater than 0"
+            )
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+
+        if is_new:
+            self.full_clean()
+
+            # increase stock
+            self.product.quantity += self.quantity
+            self.product.save()
+
+        Notification.objects.create(
+            product=self.product,
+            type='RESTOCK',
+            message=(
+                f"{self.product.title} "
+                f"restocked "
+                f"(+{self.quantity})"
+            )
+        )
+
+        super().save(*args, **kwargs)
+
+class Notification(models.Model):
+    class notificationType(models.TextChoices):
+        LOW_STOCK = 'LOW_STOCK', 'Low Stock'
+        OUT_OF_STOCK = 'OUT_OF_STOCK', 'Out of Stock'
+        RESTOCK = 'RESTOCK', 'Restock'
+        SALE = 'SALE', 'Sale'
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True,editable=False)
+
+    message = models.TextField(editable=False)
+    type = models.CharField(max_length=20, choices=notificationType.choices)
+    is_read = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.message

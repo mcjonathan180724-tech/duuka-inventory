@@ -1,0 +1,30 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+
+<h1>Deleted Products</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Restore</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for product in products %}
+        <tr>
+            <td>{{ product.title }}</td>
+
+            <td>
+                <a href="/admin/shop/product/{{ product.id }}/restore/">
+                    ♻ Restore
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

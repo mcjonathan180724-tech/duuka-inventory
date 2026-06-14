@@ -1,0 +1,62 @@
+{% extends 'admin/base_site.html' %}
+{% block content %}
+{% load humanize %}
+
+<h1>{{ product.title }}</h1>
+{% if product.image %}
+    <img
+        src="{{ product.image.url }}"
+        width="200"
+        style="border-radius:12px;"
+    >
+{% endif %}
+<hr>
+<p><strong>CATEGORY:</strong>{{product.category|default:"Uncategorized"}}</p>
+<p>
+    <strong>Description:</strong>
+    {{ product.description }}
+</p>
+
+<p>
+    <strong>Buying Price:</strong>
+    {{ product.buying_price|intcomma }}
+</p>
+
+<p>
+    <strong>Selling Price:</strong>
+    {{ product.selling_price|intcomma }}
+</p>
+
+<p>
+    <strong>Quantity:</strong>
+    {{ product.quantity }}
+</p>
+
+<p>
+    <strong>Created:</strong>
+    {{ product.created }}
+</p>
+
+<br>
+
+
+<!--
+<a href="/admin/shop/products/{{ products.id }}/change/">
+    ✏️ Edit
+</a>
+
+&nbsp; | &nbsp;
+
+<a href="/admin/shop/sale/add/?products={{ products.id }}">
+    💰 Sale
+</a>
+
+&nbsp; | &nbsp;
+
+<a href="/admin/shop/restock/add/?products={{ products.id }}">
+    📦 Restock
+</a>
+
+-->
+
+{% endblock %}
