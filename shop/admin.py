@@ -1,3 +1,4 @@
+import string
 from multiprocessing import context
 
 from django import urls
@@ -12,7 +13,7 @@ from .models import Product, Sale, Restock, Category, Supplier, Notification
 from .views import sales
 from django.contrib.admin import AdminSite, action
 from django.http import JsonResponse
-
+from django.db.models import Sum
 from django.contrib.admin import AdminSite
 from django.utils import timezone
 
@@ -42,6 +43,7 @@ def dashboard_stats(request):
         ).count(),
         'deleted_product': Product.objects.filter(is_deleted=True).count(),
     }
+
 
 @admin.register(Supplier)
 class SupplierAdmin(admin.ModelAdmin):
@@ -426,6 +428,8 @@ class NotificationAdmin(admin.ModelAdmin):
         custom_urls = [path('<int:notification_id>/popup/',
                             self.admin_site.admin_view(self.notification_popup),
                             name='notification_popup'),
+                       path('report/', self.admin_site.admin_view(self.reports), name='reports')
+
                        ]
         return custom_urls + urls
 
@@ -473,14 +477,104 @@ class NotificationAdmin(admin.ModelAdmin):
         "Status"
     )
 
+    def reports(self, request):
+        sales = Sale.objects.all()
+        revenue = sum(sale.total_cost for sale in sales)
+        profit = sum(sale.profit for sale in sales)
+        top_product = (Sale.objects.values('product__title').annotate(sold=Sum('quantity')).order_by('-sold')[:5])
+        context = {
+            **self.admin_site.each_context(request),
+            'revenue': revenue,
+            'profit': profit,
+            'top_product': top_product,
+        }
 
+        return render(request, 'admin/reports.html', context)
 
+class ReportAdmin:
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [path('report/', self.admin_site.admin_view(self.reports), name='report'),]
+        return custom_urls + urls
 
 class MyAdminSite(AdminSite):
 
     site_header = "My Duuka Admin"
     site_title = "Duuka Dashboard"
     index_title = "Inventory System"
+
+    def get_urls(self):
+        urls = super().get_urls()
+
+        custom_urls = [
+
+            path(
+
+                'reports/',
+
+                self.admin_view(
+
+                    self.reports
+
+                ),
+
+                name='reports'
+
+            ),
+
+        ]
+
+        return custom_urls + urls
+
+    from django.db.models import Sum
+
+    def reports(self, request):
+
+        sales = Sale.objects.all()
+
+        revenue = sum(sale.total_cost for sale in sales )
+
+        profit = sum( sale.profit for sale in sales )
+
+        top_products = ( Sale.objects
+
+            .values('product__title')
+
+            .annotate( sold=Sum('quantity')
+
+            )
+
+            .order_by('-sold' )[:5]
+
+        )
+        stock = Product.objects.filter(is_deleted=False).count()
+        low_stock = Product.objects.filter(quantity__gt = 0, quantity__lt= 3).count()
+        out_of_stock = Product.objects.filter(quantity = 0).count()
+        inactive = Product.objects.filter(available=False).count()
+        deleted = Product.objects.filter(is_deleted=True).count()
+
+        context = {
+
+            **self.each_context(
+
+                request
+
+            ),
+
+            'revenue': f"{revenue:,}",
+
+            'profit': f"{profit:,}",
+
+            'top_products': top_products,
+            'stock': stock,
+            'low_stock': low_stock,
+            'out_of_stock': out_of_stock,
+            'inactive': inactive,
+            'deleted': deleted,
+
+        }
+
+        return render(request,'admin/reports.html', context )
 
 
     def each_context(self, request):
@@ -499,19 +593,22 @@ class MyAdminSite(AdminSite):
             ).count(),
 
             'low_stock': Product.objects.filter(
-                quantity__lt=2
+                quantity__lt=3
             ).count(),
 
-            'stock_out': Product.objects.filter( quantity = 0 ),
+            'stock_out': Product.objects.filter(quantity = 0, ),
 
             'inactive_product': Product.objects.filter(
                 available=False
             ).count(),
         'deleted_product': Product.objects.filter(is_deleted=True).count(),
 
+            'reports_url': '/admin/reports/',
+
         })
 
         return context
+
 
 admin.site.__class__ = MyAdminSite
 

@@ -51,12 +51,18 @@
 <div class="module">
 
     <h2>
-        ⚠️ Low Stock Alerts
+        ⚠️ Out of Stock Alerts
     </h2>
 
     <div style="padding:16px;">
         <p>
-            s10+ (1 left)
+            {%for product in stock_out %}
+            <li>{{ product.title }}</li>
+
+            {% empty%}
+            <li>No Out of stock product</li>
+
+            {%endfor%}
         </p>
     </div>
 

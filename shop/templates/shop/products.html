@@ -18,11 +18,17 @@
     <td>{{product.category|default:"Uncategorized"}}</td>
     <td>{{ product.quantity }}</td>
     <td>{{ product.selling_price }}</td>
-    <td><img
-    src="{{ product.image.url }}"
-    width="60"
-    style="border-radius:12px;"
-></td>
+    <td>
+    {% if product.image %}
+            <img
+                src="{{ product.image.url }}"
+                width="60"
+                style="border-radius:12px;"
+            >
+        {% else %}
+            <img src = "{{MEDIA_URL}}products/screenimage1.png" width="60"  >
+    {% endif %}
+    </td>
     <td>{{ product.created }}</td>
 </tr>
 {% endfor %}

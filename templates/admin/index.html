@@ -1,8 +1,60 @@
 {% extends "admin/index.html" %}
 
-{% block sidebar %}
+{% block content %}
 
-    {% include "admin/dashboard_sidebar.html" %}
+<div style="
+display:flex;
+gap:15px;
+margin-bottom:20px;
+">
 
+<a href="/admin/reports/"
+style="
+padding:15px 25px;
+background:#0d6efd;
+color:white;
+text-decoration:none;
+border-radius:8px;
+font-weight:bold;
+">
+
+📊 Reports
+
+</a>
+
+
+<a href="/admin/shop/notification/"
+style="
+padding:15px 25px;
+background:#198754;
+color:white;
+text-decoration:none;
+border-radius:8px;
+font-weight:bold;
+">
+
+🔔 Notifications
+
+</a>
+
+
+<a href="/admin/shop/product/deleted/"
+style="
+padding:15px 25px;
+background:#dc3545;
+color:white;
+text-decoration:none;
+border-radius:8px;
+font-weight:bold;
+">
+
+🗑 Deleted Products
+
+</a>
+
+</div>
+
+
+{{ block.super }}
 
 {% endblock %}

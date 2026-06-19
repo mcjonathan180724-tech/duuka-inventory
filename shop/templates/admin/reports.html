@@ -1,0 +1,183 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+
+<link rel="stylesheet"
+      href="{% static 'admin/custom_admin.css' %}?v=2">
+
+{% endblock %}
+
+
+{% block content %}
+
+<h1>
+
+📊 Reports
+
+</h1>
+
+
+<h2>
+
+Revenue
+
+</h2>
+
+<p>
+
+UGX {{ revenue }}
+
+
+</p>
+
+
+
+<h2>
+
+Profit
+
+</h2>
+
+<p>
+
+UGX {{ profit }}
+
+</p>
+
+
+
+<h2>
+
+Top Selling Products
+
+</h2>
+
+
+<table>
+
+<tr>
+
+<th>
+
+Product
+
+</th>
+
+<th>
+
+Sold
+
+</th>
+
+</tr>
+
+
+
+{% for product in top_products %}
+
+<tr>
+
+<td>
+
+{{ product.product__title }}
+
+</td>
+
+<td>
+
+{{ product.sold }}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+<h2>
+
+📦 Inventory Report
+
+</h2>
+
+
+<div class="cards">
+
+<a href="/admin/shop/product/">
+
+<div class="card">
+
+Products
+
+<h1>{{ stock }}</h1>
+
+</div>
+
+</a>
+
+
+<div class="card">
+<a href="#">
+Low Stock
+
+<h1>
+
+{{ low_stock }}
+
+</h1>
+</a>
+</div>
+
+
+<div class="card">
+<a href="#">
+Out Of Stock
+
+<h1>
+
+{{ out_of_stock }}
+
+</h1>
+</a>
+</div>
+
+
+<div class="card">
+<a href="#">
+Inactive
+
+<h1>
+
+{{ inactive }}
+
+</h1>
+</a>
+</div>
+
+
+<div class="card">
+<a href="#">
+Deleted
+
+<h1>
+
+{{ deleted }}
+
+</h1>
+</a>
+</div>
+
+</div>
+
+<button onclick="window.print()">
+
+🖨 Print
+
+</button>
+
+
+
+{% endblock %}
