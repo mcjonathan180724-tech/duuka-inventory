@@ -1,5 +1,12 @@
-{% extends "admin/index.html" %}
+{% extends 'admin/base_site.html' %}
+{% load static %}
+{% block extrastyle %}
+{{ block.super }}
 
+<link rel="stylesheet"
+      href="{% static 'admin/custom_admin.css' %}">
+
+{% endblock %}
 {% block content %}
 
 <div style="
@@ -37,6 +44,33 @@ font-weight:bold;
 
 </a>
 
+    <a href="{% url 'admin:supplier_report'%}"
+style="
+padding:15px 25px;
+background:#198754;
+color:white;
+text-decoration:none;
+border-radius:8px;
+font-weight:bold;
+">
+
+🚚 Suppliers
+
+</a>
+
+    <a href="#"
+style="
+padding:15px 25px;
+background:#198754;
+color:white;
+text-decoration:none;
+border-radius:8px;
+font-weight:bold;
+">
+
+💰 Sales
+
+</a>
 
 <a href="/admin/shop/product/deleted/"
 style="

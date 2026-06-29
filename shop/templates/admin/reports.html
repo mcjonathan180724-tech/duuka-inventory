@@ -1,22 +1,106 @@
-{% extends "admin/base_site.html" %}
+{% extends 'admin/base_site.html' %}
 {% load static %}
-
 {% block extrastyle %}
 {{ block.super }}
 
 <link rel="stylesheet"
-      href="{% static 'admin/custom_admin.css' %}?v=2">
+      href="{% static 'admin/custom_admin.css' %}">
 
 {% endblock %}
 
-
 {% block content %}
 
-<h1>
+<h1 class="p1">
 
 📊 Reports
 
 </h1>
+
+<br>
+
+<h2>
+
+📦 Inventory Report
+
+</h2>
+
+
+<div class="cards">
+
+<a href="/admin/shop/product/" class = "card-link">
+
+<div class="card" style="background: rgb(67 149 67 / 0.55)">
+
+<h3>
+
+📦 Products
+
+</h3>
+
+<h1>{{ stock }}</h1>
+
+</div>
+
+</a>
+
+
+<div class="card" style="background: #417690">
+<a href="{% url 'admin:low_stock_report' %}" class = "card-link">
+
+<h3>⚠️ Low Stock</h3>
+
+<h1>
+
+{{ low_stock }}
+
+</h1>
+</a>
+</div>
+
+
+<div class="card" style="background: rgb(227 112 124 / 0.47)">
+<a href="{% url 'admin:out_of_stock_report' %}" class = "card-link">
+<h3>❌ Out Of Stock</h3>
+
+<h1>
+
+{{ out_of_stock }}
+
+</h1>
+</a>
+</div>
+
+
+<div class="card" style="background: #555555">
+<a href="{% url 'admin:inactive_report' %}" class = "card-link">
+<h3>🚫 Inactive</h3>
+
+<h1>
+
+{{ inactive }}
+
+</h1>
+</a>
+</div>
+
+
+<div class="card" style="background: rgb(165 42 42 / 0.66)">
+<a href="/admin/shop/product/deleted" class = "card-link">
+
+<h3>🗑 Deleted</h3>
+
+<h1>
+
+{{ deleted }}
+
+</h1>
+</a>
+</div>
+
+</div>
+
+
+
 
 
 <h2>
@@ -55,7 +139,7 @@ Top Selling Products
 </h2>
 
 
-<table>
+<table class="report-table">
 
 <tr>
 
@@ -97,82 +181,7 @@ Sold
 
 </table>
 
-<h2>
-
-📦 Inventory Report
-
-</h2>
-
-
-<div class="cards">
-
-<a href="/admin/shop/product/">
-
-<div class="card">
-
-Products
-
-<h1>{{ stock }}</h1>
-
-</div>
-
-</a>
-
-
-<div class="card">
-<a href="#">
-Low Stock
-
-<h1>
-
-{{ low_stock }}
-
-</h1>
-</a>
-</div>
-
-
-<div class="card">
-<a href="#">
-Out Of Stock
-
-<h1>
-
-{{ out_of_stock }}
-
-</h1>
-</a>
-</div>
-
-
-<div class="card">
-<a href="#">
-Inactive
-
-<h1>
-
-{{ inactive }}
-
-</h1>
-</a>
-</div>
-
-
-<div class="card">
-<a href="#">
-Deleted
-
-<h1>
-
-{{ deleted }}
-
-</h1>
-</a>
-</div>
-
-</div>
-
-<button onclick="window.print()">
+<button class="no-print" onclick="window.print()">
 
 🖨 Print
 

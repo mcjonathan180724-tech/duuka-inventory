@@ -5,15 +5,16 @@ from django import urls
 from django.contrib import admin
 from django.core.mail import message
 from django.db.models import Model
+from django.template.defaultfilters import title
 from django.utils.html import format_html
 from django.views.generic import detail
 from django.urls import path
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Product, Sale, Restock, Category, Supplier, Notification
+from .models import Product, Sale, Restock, Category, Supplier, Notification, PurchaseOrderItem, PurchaseOrder
 from .views import sales
 from django.contrib.admin import AdminSite, action
 from django.http import JsonResponse
-from django.db.models import Sum
+from django.db.models import Sum, Count
 from django.contrib.admin import AdminSite
 from django.utils import timezone
 
@@ -159,9 +160,33 @@ class ProductAdmin(admin.ModelAdmin):
         obj.is_deleted = True
         obj.save()
 
+
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.filter(is_deleted=False)
+
+    exclude = ('is_deleted',)
+
+    @admin.action(description="Archive selected products")
+    def archive_products(self, request, queryset):
+
+        queryset.update(
+            is_deleted=True
+        )
+
+    @admin.action(description="Restore selected products")
+    def restore_products(self, request, queryset):
+
+        queryset.update(
+            is_deleted=False
+        )
+
+    actions = [
+        'archive_products',
+        'restore_products'
+    ]
+
 
     def view_product(self, obj):
         detail_url = (
@@ -172,6 +197,14 @@ class ProductAdmin(admin.ModelAdmin):
                            obj.title
                            )
     view_product.short_description = 'Title'
+
+    def has_delete_permission(
+            self,
+            request,
+            obj=None
+    ):
+
+        return False
 
 
     def product_details(self, request, product_id):
@@ -364,7 +397,7 @@ class RestockAdmin(admin.ModelAdmin):
     def has_delete_permission(
             self,
             request,
-            obj=True
+            obj= None
     ):
         return False
 
@@ -509,24 +542,70 @@ class MyAdminSite(AdminSite):
         custom_urls = [
 
             path(
-
                 'reports/',
-
                 self.admin_view(
-
                     self.reports
-
                 ),
-
                 name='reports'
+            ),
 
+            path(
+                'reports/low-stock/',
+                self.admin_view(
+                    self.low_stock_report
+                ),
+                name='low_stock_report'
+            ),
+
+            path(
+                'reports/out-of-stock/',
+                self.admin_view(
+                    self.out_of_stock_report
+                ),
+                name='out_of_stock_report'
+            ),
+
+            path(
+                'reports/inactive/',
+                self.admin_view(
+                    self.inactive_report
+                ),
+                name='inactive_report'
+            ),
+
+            path('reports/suppliers/',
+                 self.admin_view(self.supplier_report
+                ),
+                 name='supplier_report'
+                 ),
+
+            path(
+                'reports/supplier/<int:supplier_id>/',
+                self.admin_view(self.supplier_details_report),
+                name='supplier_detail'
             ),
 
         ]
 
         return custom_urls + urls
-
     from django.db.models import Sum
+
+    def supplier_details_report(self, request, supplier_id):
+        supplier = get_object_or_404(Supplier, pk=supplier_id)
+        products = Product.objects.filter(supplier=supplier, is_deleted=False)
+        low_stock = products.filter(quantity__gt=0, quantity__lt =3).count()
+        out_of_stock = products.filter(quantity__gt=0).count()
+        total_stock = sum(p.quantity for p in products)
+        context = {
+            **self.each_context(request),
+            'supplier': supplier,
+            'products': products,
+            'total_stock': total_stock,
+            'low_stock': low_stock,
+            'out_of_stock': out_of_stock,
+
+        }
+        return render(request, 'admin/supplier_detail.html', context)
 
     def reports(self, request):
 
@@ -548,7 +627,7 @@ class MyAdminSite(AdminSite):
 
         )
         stock = Product.objects.filter(is_deleted=False).count()
-        low_stock = Product.objects.filter(quantity__gt = 0, quantity__lt= 3).count()
+        low_stock = Product.objects.filter(quantity__gt = 0, quantity__lt = 3).count()
         out_of_stock = Product.objects.filter(quantity = 0).count()
         inactive = Product.objects.filter(available=False).count()
         deleted = Product.objects.filter(is_deleted=True).count()
@@ -593,15 +672,16 @@ class MyAdminSite(AdminSite):
             ).count(),
 
             'low_stock': Product.objects.filter(
+                quantity__gt=0,
                 quantity__lt=3
             ).count(),
 
-            'stock_out': Product.objects.filter(quantity = 0, ),
+            'out_of_stock': Product.objects.filter(quantity = 0, ),
 
             'inactive_product': Product.objects.filter(
                 available=False
             ).count(),
-        'deleted_product': Product.objects.filter(is_deleted=True).count(),
+            'deleted_product': Product.objects.filter(is_deleted=True).count(),
 
             'reports_url': '/admin/reports/',
 
@@ -609,6 +689,182 @@ class MyAdminSite(AdminSite):
 
         return context
 
+
+    def low_stock_report(self, request):
+
+        products = Product.objects.filter(
+
+            quantity__gt=0,
+
+            quantity__lt=3,
+
+            is_deleted=False
+
+        )
+
+        context = {
+
+            **self.each_context(request),
+
+            'title': 'Low Stock',
+
+            'products': products
+
+        }
+
+        return render(
+
+            request,
+
+            'admin/report_products.html',
+
+            context
+
+        )
+
+
+    def out_of_stock_report(self, request):
+
+        products = Product.objects.filter(
+
+            quantity=0,
+
+
+        )
+
+        context = {
+
+            **self.each_context(request),
+
+            'title': 'Out Of Stock',
+
+            'products': products
+
+        }
+
+        return render(
+
+            request,
+
+            'admin/report_products.html',
+
+            context
+
+        )
+
+    def inactive_report(self, request):
+        products = Product.objects.filter(
+            available=False
+        )
+
+        context = {
+            **self.each_context(request),
+            'title': 'Inactive Products',
+            'products': products
+        }
+
+        return render(
+            request,
+            'admin/report_products.html',
+            context
+        )
+
+    def supplier_report (self, request):
+        suppliers = Supplier.objects.all()
+        context = {
+            **self.each_context(request),
+            'title': 'Suppliers',
+            'suppliers': suppliers
+        }
+        return render(
+            request, 'admin/supplier_report.html', context
+        )
+
+class PurchaseOrderItemInLine(admin.TabularInline):
+    model = PurchaseOrderItem
+    extra = 1
+
+    def formfield_for_foreignkey(
+            self,
+            db_field,
+            request,
+            **kwargs
+    ):
+
+        if db_field.name == "product":
+
+            object_id = request.resolver_match.kwargs.get("object_id")
+
+            if object_id:
+
+                po = PurchaseOrder.objects.get(pk=object_id)
+
+                kwargs["queryset"] = Product.objects.filter(
+                    supplier=po.supplier,
+                    is_deleted=False
+                )
+
+            else:
+
+                supplier = request.GET.get("supplier")
+
+                if supplier:
+                    kwargs["queryset"] = Product.objects.filter(
+                        supplier_id=supplier,
+                        is_deleted=False
+                    )
+
+        return super().formfield_for_foreignkey(
+            db_field,
+            request,
+            **kwargs
+        )
+
+@admin.register(PurchaseOrder)
+class PurchaseOrderAdmin(admin.ModelAdmin):
+    list_display = ('reference', 'supplier', 'status', 'created')
+    inlines = [PurchaseOrderItemInLine]
+
+
+
+    def get_changeform_initial_data(self, request):
+        initial = super().get_changeform_initial_data(request)
+        suppliers = request.GET.get('supplier')
+        if suppliers:
+            initial['supplier'] = suppliers
+
+        return initial
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ('supplier',)
+
+        return ()
+
+    
+    def response_change(self, request, obj):
+
+        if "_send" in request.POST:
+
+            obj.status = "sent"
+
+            obj.save()
+
+            self.message_user(
+
+                request,
+
+                "Purchase Order sent."
+
+            )
+
+        elif "_draft" in request.POST:
+
+            obj.status = "draft"
+
+            obj.save()
+
+        return super().response_change(request, obj)
 
 admin.site.__class__ = MyAdminSite
 

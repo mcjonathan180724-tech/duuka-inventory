@@ -1,8 +1,8 @@
 from multiprocessing import context
 
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 
-from .models import Product, Sale
+from .models import Product, Sale, Supplier
 
 
 # Create your views here.
@@ -25,3 +25,4 @@ def products(request):
     context = { 'products_list': products_list }
 
     return render(request,'shop/products.html',context)
+

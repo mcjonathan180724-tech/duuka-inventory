@@ -1,0 +1,67 @@
+{% extends 'admin/base_site.html' %}
+{% load static %}
+{% block extrastyle %}
+{{ block.super }}
+
+<link rel="stylesheet"
+      href="{% static 'admin/custom_admin.css' %}">
+
+{% endblock %}
+
+{% block content %}
+<div id="content" class="colM">
+
+<table class="report-table">
+
+<tr>
+
+<th>
+
+Product
+
+</th>
+
+<th>
+
+Supplier
+
+</th>
+
+<th>
+
+Quantity
+
+</th>
+
+</tr>
+
+
+{% for product in products %}
+
+<tr>
+
+<td>
+
+{{ product.title }}
+
+</td>
+
+<td>
+
+{{ product.supplier }}
+
+</td>
+
+<td>
+
+{{ product.quantity }}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+{% endblock %}

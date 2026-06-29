@@ -3,6 +3,8 @@ from os import name
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.core.validators import MinValueValidator
+from datetime import date
+from random import randint
 
 # Create your models here.
 
@@ -23,7 +25,7 @@ class Supplier(models.Model):
 
 
 class Product(models.Model):
-    # these productstate en products type are part of Products, function called in there
+    # these product state en products type are part of Products, function called in there
     class ProductState(models.TextChoices):
         AVAILABLE = 'AVAILABLE', 'Available'
         COMING = 'COMING', 'Coming'
@@ -42,7 +44,7 @@ class Product(models.Model):
     description = models.TextField()
     buying_price = models.IntegerField(validators=[MinValueValidator(1)])
     selling_price = models.IntegerField(validators=[MinValueValidator(1)])
-    quantity = models.IntegerField(validators=[MinValueValidator(1)])
+    quantity = models.IntegerField(validators=[MinValueValidator(0)])
     
     image = models.ImageField(
         upload_to='products/',
@@ -66,17 +68,18 @@ class Product(models.Model):
     )
     is_deleted = models.BooleanField(default=False)
     def clean(self):
-            if self.quantity <= 0:
+            if self.quantity < 0:
                 raise ValidationError("Product quantity must be greater than 0")
             if self.buying_price <= 0:
                 raise ValidationError("Product buying price must be greater than 0")
             if self.selling_price <= 0:
                 raise ValidationError("Product selling price must be greater than 0")
 
-
     def save(self, *args, **kwargs):
+
         if self.quantity <= 0:
             self.available = False
+
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -178,7 +181,7 @@ class Restock(models.Model):
         )
 
     def clean(self):
-        if self.quantity <= 0:
+        if self.quantity < 0:
             raise ValidationError(
                 "Restock quantity must be greater than 0"
             )
@@ -221,3 +224,41 @@ class Notification(models.Model):
 
     def __str__(self):
         return self.message
+
+class PurchaseOrder(models.Model):
+    STATUS = [
+        ('draft', 'Draft'),
+        ('sent', 'Sent'),
+        ('received', 'Received'),
+        ('canceled', 'Canceled'),
+     ]
+    reference = models.CharField(
+        max_length=20,
+        unique=True,
+        blank=True,
+        editable=False,
+
+    )
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE)
+    status = models.CharField(max_length=20, choices=STATUS, default='draft')
+    created = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return self.reference
+    def save(self, *args, **kwargs):
+        if not self.reference:
+            today = date.today().strftime("%Y-%m-%d")
+            while True:
+                rand = randint(100,999)
+                ref = f"{today}-{rand}"
+                if not PurchaseOrder.objects.filter(reference=ref).exists():
+                    self.reference = ref
+                    break
+        super().save(*args, **kwargs)
+
+class PurchaseOrderItem(models.Model):
+    purchaseOrder = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    def __str__(self):
+        return (self.product.title)
+

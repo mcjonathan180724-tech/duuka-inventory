@@ -1,0 +1,111 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% block extrastyle %}
+{{ block.super }}
+
+<link rel="stylesheet"
+      href="{% static 'admin/custom_admin.css' %}">
+
+{% endblock %}
+{% block content %}
+
+<h1>
+
+🏢Report
+
+</h1>
+
+
+<table class="report-table">
+
+<tr>
+
+<th>
+
+Supplier
+
+</th>
+
+<th>
+
+Products
+
+</th>
+
+<th>
+
+Stock
+
+</th>
+
+<th>
+
+Out Of Stock
+
+</th>
+
+</tr>
+
+
+{% for supplier in suppliers %}
+
+<tr>
+
+<td>
+<a href="/admin/reports/supplier/{{supplier.id}}/">
+{{ supplier.name }}
+</a>
+</td>
+
+<td>
+
+{{ supplier.product_set.count }}
+
+</td>
+
+<td>
+
+{{ supplier.product_set.all|length }}
+
+</td>
+
+<td>
+
+{{ supplier.product_set.all|length }}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+
+</table>
+
+{% endblock %}
+
+{% for product in products %}
+
+<tr>
+
+<td>
+
+{{ product.title }}
+
+</td>
+
+<td>
+
+{{ product.quantity }}
+
+</td>
+
+<td>
+
+{{ product.selling_price }}
+
+</td>
+
+</tr>
+
+{% endfor %}

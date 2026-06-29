@@ -1,0 +1,208 @@
+{% extends 'admin/base_site.html' %}
+{% load static %}
+{% block extrastyle %}
+{{ block.super }}
+
+<link rel="stylesheet"
+      href="{% static 'admin/custom_admin.css' %}">
+
+{% endblock %}
+
+{% block content %}
+
+<h1 class="p1">
+
+🏢 {{ supplier.name }} <br>
+
+</h1>
+
+
+<p>
+<a href="tel:{{supplier.phone}}">
+📞 {{ supplier.phone }}</a>
+
+</p>
+
+
+<p>
+<a href="mailto:{{ supplier.email }}?subject= Restock Request">
+📧 {{ supplier.email }}</a>
+
+</p>
+
+
+<p>
+
+📍 {{ supplier.location }}
+
+</p>
+
+
+<hr>
+
+
+<h2>
+
+Summary
+
+</h2>
+
+
+<ul>
+
+<li>
+
+📦 Total Products
+
+{{ products.count }}
+
+</li>
+
+
+<li>
+
+⚠️ Low Stock
+
+{{ low_stock }}
+
+</li>
+
+
+<li>
+
+❌ Out Of Stock
+
+{{ out_stock }}
+
+</li>
+
+
+<li>
+
+📦 Units In Stock
+
+{{ total_stock }}
+
+</li>
+
+
+</ul>
+
+
+<table class="report-table">
+
+<tr>
+
+<th>
+
+Product
+
+</th>
+
+
+<th>
+
+Quantity
+
+</th>
+
+
+<th>
+
+Status
+
+</th>
+
+</tr>
+
+
+{% for product in products %}
+
+<tr>
+
+<td>
+
+{{ product.title }}
+
+</td>
+
+
+<td>
+
+{{ product.quantity }}
+
+</td>
+
+
+<td>
+
+{% if product.quantity == 0 %}
+
+❌ Out Of Stock
+
+
+{% elif product.quantity < 3 %}
+
+⚠️ Low Stock
+
+
+{% else %}
+
+✅ Available
+
+
+{% endif %}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+
+</table>
+
+<h2>⚠️ Low Stock Products</h2>
+
+<ul>
+
+{% for product in products %}
+
+    {% if product.quantity > 0 and product.quantity < 3 %}
+
+        <li>
+
+            {{ product.title }}
+
+            ({{ product.quantity }} left)
+
+        </li>
+
+    {% endif %}
+
+{% endfor %}
+
+</ul>
+
+<h2>❌ Out Of Stock</h2>
+
+<ul>
+
+{% for product in products %}
+
+    {% if product.quantity == 0 %}
+
+        <li>
+
+            {{ product.title }}
+
+        </li>
+
+    {% endif %}
+
+{% endfor %}
+
+</ul>
+<button class="no-print"  onclick="window.print()">📝 Print Report</button>
+<a href="{% url 'admin:shop_purchaseorder_add' %}?supplier={{supplier.id}}">🗂️Generate Purchase Order</a>
+{% endblock %}

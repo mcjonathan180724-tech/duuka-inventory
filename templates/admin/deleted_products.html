@@ -1,10 +1,17 @@
-{% extends "admin/base_site.html" %}
+{% extends 'admin/base_site.html' %}
+{% load static %}
+{% block extrastyle %}
+{{ block.super }}
+
+<link rel="stylesheet"
+      href="{% static 'admin/custom_admin.css' %}">
+
+{% endblock %}
 
 {% block content %}
 
-<h1>Deleted Products</h1>
 
-<table>
+<table class="report-table">
     <thead>
         <tr>
             <th>Product</th>
