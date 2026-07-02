@@ -15,11 +15,24 @@ class Category(models.Model):
         return self.name
 
 class Supplier(models.Model):
+    sup_ref = models.CharField(max_length=50, null=True, blank=True,)
     name = models.CharField(max_length=100, unique=True)
     phone = models.CharField(max_length=20, blank=True)
     email = models.EmailField(blank=True)
     location = models.CharField(max_length=200, blank=True)
     created = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.sup_ref:  # checks if reference is unique, not taken yet
+            while True:
+                rand = randint(1, 999999)
+                ref = f"SUP-{rand:06d}"
+                if not Supplier.objects.filter(sup_ref=ref).exists():
+                    self.sup_ref = ref
+                    break
+
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.name
 
@@ -38,6 +51,7 @@ class Product(models.Model):
 
 #adding category for each product
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True,blank=True)
+    product_ref = models.CharField(max_length=50,editable=False, blank=True)
 #we set on_delete to set null, being true, meaning if a category is deleted it doesnot delete whatever belongs to it
     title = models.CharField(max_length=200)
     supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True)
@@ -67,6 +81,7 @@ class Product(models.Model):
         default=ProductState.AVAILABLE
     )
     is_deleted = models.BooleanField(default=False)
+
     def clean(self):
             if self.quantity < 0:
                 raise ValidationError("Product quantity must be greater than 0")
@@ -77,8 +92,18 @@ class Product(models.Model):
 
     def save(self, *args, **kwargs):
 
+        if not self.product_ref:  #checks if reference is unique, not taken yet
+            while True:
+                rand = randint(1,999999)
+                ref = f"PRD-{rand:06d}"
+                if not Product.objects.filter(product_ref=ref).exists():
+                    self.product_ref = ref
+                    break
+
         if self.quantity <= 0:
             self.available = False
+        else:
+            self.available = True
 
         super().save(*args, **kwargs)
 
@@ -102,9 +127,11 @@ class Sale(models.Model):
     price = models.IntegerField(editable=False)
     type = models.TextChoices('AMOLED', 'OLED', 'COPY')
     created = models.DateTimeField(auto_now_add=True)
+    sal_ref = models.CharField(max_length=50,editable=False, blank=True)
 
     def __str__(self):
         return (
+            f"{self.sal_ref}"
             f"{self.product.title}"
             f"{self.quantity}"
         )
@@ -132,6 +159,18 @@ class Sale(models.Model):
     # now after validation you can save without bags
     def save(self, *args, **kwargs):
         is_new = self.pk is None
+
+        if not self.sal_ref:
+            today = date.today().strftime("%Y%m%d")
+            while True:
+                rand = randint(100,999)
+                sal = f"SAL-{today}-{rand}"
+                if not Sale.objects.filter(sal_ref=sal).exists():
+                    self.sal_ref = sal
+                    break
+
+        def __str__(self):
+            return self.sal_ref
 
         if is_new:
             self.full_clean()
@@ -164,6 +203,8 @@ class Sale(models.Model):
                         f"{self.product.supplier}"
                     )
                 )
+
+
         super().save(*args, **kwargs)
 
 
