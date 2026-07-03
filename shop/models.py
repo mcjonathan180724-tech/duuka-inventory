@@ -5,6 +5,8 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from datetime import date
 from random import randint
+from django.contrib.auth.models import User
+
 
 # Create your models here.
 
@@ -128,6 +130,9 @@ class Sale(models.Model):
     type = models.TextChoices('AMOLED', 'OLED', 'COPY')
     created = models.DateTimeField(auto_now_add=True)
     sal_ref = models.CharField(max_length=50,editable=False, blank=True)
+    sold_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    STATUS_CHOICE = (("sold","sold"),("canceled","canceled"),)
+    status = models.CharField(max_length=50, choices=STATUS_CHOICE, default="sold",)
 
     def __str__(self):
         return (
@@ -169,8 +174,7 @@ class Sale(models.Model):
                     self.sal_ref = sal
                     break
 
-        def __str__(self):
-            return self.sal_ref
+        
 
         if is_new:
             self.full_clean()

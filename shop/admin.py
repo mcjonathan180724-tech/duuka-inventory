@@ -13,7 +13,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import Product, Sale, Restock, Category, Supplier, Notification, PurchaseOrderItem, PurchaseOrder
 from .views import sales
 from django.contrib.admin import AdminSite, action
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.db.models import Sum, Count
 from django.contrib.admin import AdminSite
 from django.utils import timezone
@@ -301,6 +301,8 @@ class SaleAdmin(admin.ModelAdmin):
 
     # function to filter out only non deleted products en available stock only
 
+
+
     def formfield_for_foreignkey(
             self,
             db_field,
@@ -321,10 +323,10 @@ class SaleAdmin(admin.ModelAdmin):
 
     list_display = (
         'view_sales',
+        'product',
         'quantity',
-        'price',
         'total_cost',
-        'profit',
+        'status',
         'created',
 
     )
@@ -334,27 +336,59 @@ class SaleAdmin(admin.ModelAdmin):
 
     def view_sales(self, obj):
         detail_url = ( f"/admin/shop/sale/{obj.id}/detail/")
-        return format_html('<a href="{}">{}</a>',detail_url, obj.product.title)
+        return format_html('<a href="{}">{}</a>',detail_url, obj.sal_ref)
     view_sales.short_description = 'Sale'
 
     def get_urls(self):
         urls = super().get_urls()
-        custom_urls = [ path('<int:sale_id>/detail/', self.admin_site.admin_view(self.sale_details),
-                 name='sale_details'),]
+        custom_urls = [
+            path('<int:sale_id>/detail/', self.admin_site.admin_view(self.sale_details),
+                 name='sale_details'),
+
+            path("<int:sale_id>/cancel/",self.admin_site.admin_view(self.cancel_sale),
+                name="cancel_sale",
+            ),
+
+                        ]
         return custom_urls + urls
+
+    def cancel_sale(self, request, sale_id):
+        sale = get_object_or_404(Sale, pk=sale_id)
+        if sale.status == "canceled":
+            self.message_user(request, "Sale is already canceled")
+
+        sale.product.quantity += sale.quantity
+        sale.product.save()
+
+        sale.status = "canceled"
+        sale.save()
+
+        self.message_user(
+            request,
+            "Sale canceled successfully."
+        )
+
+
+
+        return redirect(f"/admin/shop/sale/{sale.id}/detail/")
+
 
     def sale_details(self, request, sale_id):
         sale = get_object_or_404(Sale, pk=sale_id)
         context = {**self.admin_site.each_context(request), 'sale':sale, **dashboard_stats(request)}
         return render(request, 'admin/sale_details.html', context)
 
-    search_fields = (
-        'product__title',
-    )
 
-    ordering = (
-        '-created',
-    )
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.sold_by = request.user
+        super().save_model(
+            request,
+            obj,
+            form,
+            change,
+        )
 
 # class for making a restock
 
@@ -535,6 +569,8 @@ class MyAdminSite(AdminSite):
     site_header = "My Duuka Admin"
     site_title = "Duuka Dashboard"
     index_title = "Inventory System"
+
+
 
     def get_urls(self):
         urls = super().get_urls()
@@ -841,7 +877,7 @@ class PurchaseOrderAdmin(admin.ModelAdmin):
 
         return ()
 
-    
+
     def response_change(self, request, obj):
 
         if "_send" in request.POST:

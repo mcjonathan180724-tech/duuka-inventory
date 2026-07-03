@@ -2,38 +2,84 @@
 {% block content %}
 {% load humanize %}
 
+{% load static %}
+{% block extrastyle %}
+{{ block.super }}
+
+<link rel="stylesheet"
+      href="{% static 'admin/custom_admin.css' %}">
+
+{% endblock %}
+
+<div id="sales-details">
+
+
 <h1>SALES DETAILS</h1>
 
 <hr>
 
-<p><h2 style="border:2px solid forestgreen">{{ sale.product }}</h2></p>
+<h2 >🛒 {{sale.sal_ref }} <br>
 
-<p>
-    <strong>Description:</strong>
-    {{ sale.product.type }}
-</p>
+</h2>
 
-<p>
-    <strong>CATEGORY:</strong>
-    {{ sale.product.category|default:"Uncategorized" }}
-</p>
+<p> 💼 {{ sale.product.title }} </p>
 
-<p>
-    <strong>Buying Price:</strong>
-    {{ sale.price|intcomma }}
-</p>
+<hr>
+<ul>
 
-<p>
-    <strong>Quantity:</strong>
-    {{ sale.quantity }}
-</p>
+<li> ♯ Sold Quantity {{ sale.quantity }} </li>
 
-<p>
-    <strong>Sold On:</strong>
-    {{ sale.created }}
-</p>
+<li> 🗲 UNITY PRICE {{ sale.price|intcomma }} </li>
+
+
+<li>💲 TOTAL {{ sale.total_cost|intcomma }} </li>
+
+
+<li> ⏳ PROFIT {{ sale.profit|intcomma }} </li>
+
+
+</ul>
+
+</div>
 
 <br>
+
+<div id="record-details">
+<h1 class="p1" > Record </h1>
+
+<p class="p2"> 𝒊 : {{ sale.sal_ref }} </p>
+
+<ul>
+
+<li> ✿ Name:  {{sale.product.title}} </li>
+
+<li> 📁 Category:  {{ sale.product.category }}</li>
+
+<li> ℹ️ Description:  {{sale.product.type}} </li>
+
+    <li> 📅 Sold-On: {{sale.created }} </li>
+
+<li>🙎🏻‍♂️ Sold-by:  {{ sale.sold_by|default:"Unknown" }} </li>
+
+
+<li> ✔️ Status: {{ sale.status}}  </li>
+
+
+</ul>
+
+<br>
+
+
+</ul>
+
+</div>
+
+{% if sale.status == "sold" %}
+    <a href="{% url 'admin:cancel_sale' sale.id %}">❌ Cancel</a>
+{% else %}
+    <button disabled>Already Canceled</button>
+{% endif %}
+</a><button type="button" class="no-print" onclick="window.print()">🖨 Print Receipt</button>
 
 
 {% endblock%}

@@ -222,14 +222,41 @@
 }
 
 @media print{
+.no-print{
+    display:inline-block;
+    padding:8px 15px;
+    border:1px solid #333;
+    background:#f5f5f5;
+    color:#000;
+    text-decoration:none;
+    cursor:pointer;
+}
 
-    .no-print{
-
-        display:none !important;
-        border: 2px dotted #008CBA;
-
+.no-print:hover{
+    background:#ddd;
+}
+     /* Hide everything by default */
+    body * {
+        visibility: hidden;
     }
 
+    /* Show only the two sections */
+    #sales-details, #sales-details * {
+        visibility: visible;
+    }
+
+    #record-details, #record-details * {
+        visibility: visible;
+    }
+
+    /* Position them nicely on the page */
+    #sales-details, #record-details {
+        position: relative;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin-bottom: 20px;
+    }
 
 }
 .p1{font-family: "Copperplate Gothic Bold", Fantasy;}
@@ -241,4 +268,40 @@
     color: #0c0c0c;
     text-transform: uppercase;
     font-family: "Copperplate Gothic Bold",Fantasy;
+}
+
+.p2{font-family: "Copperplate Gothic Bold", Fantasy;}
+
+    #content > h2 {
+    font-size: 1rem;
+    font-weight: 400;
+    color: #605f5f;
+    text-transform: uppercase;
+    font-family: "Stencil", fantasy;
+}
+
+   @media print {
+
+    /* Hide everything by default */
+    body * {
+        visibility: hidden;
+    }
+
+    /* Show only the two sections */
+    #sales-details, #sales-details * {
+        visibility: visible;
+    }
+
+    #record-details, #record-details * {
+        visibility: visible;
+    }
+
+    /* Position them nicely on the page */
+    #sales-details, #record-details {
+        position: relative;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin-bottom: 20px;
+    }
 }
